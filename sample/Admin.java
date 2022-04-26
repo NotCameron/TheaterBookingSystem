@@ -35,7 +35,7 @@ public class Admin {
             while (rs.next()) {
                 // Retrieve by column name
                 System.out.print("Movie #: " + rs.getInt("movie_id"));
-                System.out.print("Movie Name: " + rs.getString("movie_name"));
+                System.out.print(", Movie Name: " + rs.getString("movie_name"));
                 System.out.print(", Room: " + rs.getInt("room_id"));
                 System.out.print(", Start Time: " + rs.getTimestamp("start_time"));
                 System.out.print(", Duration: " + rs.getString("duration"));
@@ -56,7 +56,7 @@ public class Admin {
             while (rs.next()) {
                 // Retrieve by column name
                 System.out.print("Ticket #: " + rs.getInt("ticket_id"));
-                System.out.print("Customer Id: " + rs.getInt("customer_id"));
+                System.out.print(", Customer Id: " + rs.getInt("customer_id"));
                 System.out.print(", Movie Id: " + rs.getInt("movie_id"));
                 System.out.print(", Seat Id: " + rs.getInt("seat"));
                 System.out.print(", Price: " + rs.getInt("price") + "\n");

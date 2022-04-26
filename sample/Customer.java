@@ -77,7 +77,7 @@ public class Customer {
         while (rs.next()) {
             // Retrieve by column name
             System.out.print("Movie #: " + rs.getInt("movie_id"));
-            System.out.print("Movie Name: " + rs.getString("movie_name"));
+            System.out.print(", Movie Name: " + rs.getString("movie_name"));
             System.out.print(", Room: " + rs.getInt("room_id"));
             System.out.print(", Start Time: " + rs.getTimestamp("start_time"));
             System.out.print(", Duration: " + rs.getString("duration"));
@@ -102,7 +102,7 @@ public class Customer {
             while (rs.next()) {
                 // Retrieve by column name
                 System.out.print("Ticket #: " + rs.getInt("ticket_id"));
-                System.out.print("Customer Id: " + rs.getInt("customer_id"));
+                System.out.print(", Customer Id: " + rs.getInt("customer_id"));
                 System.out.print(", Movie Id: " + rs.getInt("movie_id"));
                 System.out.print(", Seat Id: " + rs.getInt("seat"));
                 System.out.print(", Price: " + rs.getInt("price") + "\n");
@@ -207,7 +207,6 @@ public class Customer {
 
     }
 
-    //Worry about later
     public static void changeSeat() {
         printTransactions();
         //User Input
@@ -215,6 +214,47 @@ public class Customer {
         System.out.print("Ticket #: ");
         String TIDstr = scan.nextLine();
         int TID = Integer.parseInt(TIDstr);
+        System.out.print("New Seat #: ");
+        String newSeatStr = scan.nextLine();
+        int newSeat = Integer.parseInt(newSeatStr);
+
+        try  {
+            Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+
+            //Unoccupy seat
+            //Find Seat
+            String query = "select * from transaction where ticket_id = ?";
+            PreparedStatement preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, TID);
+            ResultSet rs = preparedStmt.executeQuery();
+            rs.next();
+            int MID = rs.getInt("movie_id");
+            int SID = rs.getInt("seat");
+
+            //Unoccupy
+            query = "update seat set occupied = 0 where seat_id = ? and movie_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, SID);
+            preparedStmt.setInt(2, MID);
+            preparedStmt.execute();
+
+            //Occupy new seat
+            query = "update seat set occupied = 1 where seat_id = ? and movie_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, newSeat);
+            preparedStmt.setInt(2, MID);
+            preparedStmt.execute();
+
+            //update transaction
+            query = "update transaction set seat = ? where ticket_id = ? and movie_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, newSeat);
+            preparedStmt.setInt(2, TID);
+            preparedStmt.setInt(3, MID);
+            preparedStmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void cancelTicket() {
@@ -243,12 +283,6 @@ public class Customer {
             preparedStmt = conn.prepareStatement(query);
             preparedStmt.setInt(1, SID);
             preparedStmt.setInt(2, MID);
-            preparedStmt.execute();
-
-            //Delete
-            query = "delete from transaction where ticket_id = ?";
-            preparedStmt = conn.prepareStatement(query);
-            preparedStmt.setInt(1, TID);
             preparedStmt.execute();
 
             //delete transaction
@@ -300,16 +334,16 @@ public class Customer {
             System.out.print("Please select a function:\n");
             option = scan.nextLine();
             switch (option) {
-                case "1": //register account
+                case "1": //print movies
                     printMovies();
                     break;
-                case "2": //log in
+                case "2": //book ticket
                     bookTicket();
                     break;
-                case "3": //log in
-                    bookTicket();
+                case "3": //change seat
+                    changeSeat();
                     break;
-                case "4": //log in
+                case "4": //cancel ticket
                     cancelTicket();
                     break;
                 case "5": //exit program
