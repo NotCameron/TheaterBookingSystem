@@ -48,17 +48,15 @@ public class Customer {
     }
 
     public static boolean login() {
-        Scanner scan = new Scanner(System.in);
-        userID = scan.nextLine();
-        password = scan.nextLine();
         //Loop throught the User table and check to see if a the adminID matches any entries.
         //If it does, check the password with that specfic one. If both match, validate the user.
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM customer")) {
             while(rs.next()) {
-                if(userID == rs.getString("customer_id")) {
+                if(userID.equals(rs.getString("name"))) {
                     if(password.equals(rs.getString("password"))) {
+                        accountNum=rs.getInt("customer_id");
                         return true;
                     }
                 }
@@ -88,6 +86,29 @@ public class Customer {
         }
         conn.close();
     } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Prints transactions relevant to customer
+    public static void printTransactions() {
+        try {Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+             String query = "SELECT * FROM transaction where customer_id = ?"; //filters out other customers
+             PreparedStatement preparedStmt = conn.prepareStatement(query);
+             preparedStmt.setInt(1, accountNum);
+             ResultSet rs = preparedStmt.executeQuery();
+
+            // Extract data from result set
+            while (rs.next()) {
+                // Retrieve by column name
+                System.out.print("Ticket #: " + rs.getInt("ticket_id"));
+                System.out.print("Customer Id: " + rs.getInt("customer_id"));
+                System.out.print(", Movie Id: " + rs.getInt("movie_id"));
+                System.out.print(", Seat Id: " + rs.getInt("seat"));
+                System.out.print(", Price: " + rs.getInt("price") + "\n");
+            }
+            conn.close();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -187,13 +208,57 @@ public class Customer {
     }
 
     //Worry about later
-    public void changeSeat() {
-
+    public static void changeSeat() {
+        printTransactions();
+        //User Input
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Ticket #: ");
+        String TIDstr = scan.nextLine();
+        int TID = Integer.parseInt(TIDstr);
     }
 
-    //Maybe later
-    public void cancelTicket() {
+    public static void cancelTicket() {
+        printTransactions();
+        //User Input
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Ticket #: ");
+        String TIDstr = scan.nextLine();
+        int TID = Integer.parseInt(TIDstr);
 
+        try  {
+            Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+
+            //Unoccupy seat
+                //Find Seat
+            String query = "select * from transaction where ticket_id = ?";
+            PreparedStatement preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, TID);
+            ResultSet rs = preparedStmt.executeQuery();
+            rs.next();
+            int MID = rs.getInt("movie_id");
+            int SID = rs.getInt("seat");
+
+                //Unoccupy
+            query = "update seat set occupied = 0 where seat_id = ? and movie_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, SID);
+            preparedStmt.setInt(2, MID);
+            preparedStmt.execute();
+
+            //Delete
+            query = "delete from transaction where ticket_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, TID);
+            preparedStmt.execute();
+
+            //delete transaction
+            query = "delete from transaction where ticket_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, TID);
+            preparedStmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
@@ -224,8 +289,35 @@ public class Customer {
                     System.out.print("Invalid Input! Select a function (1-5)");
             }
         }
-        printMovies();
-        accountNum = 1;
-        bookTicket();
+
+        while (true) {
+            System.out.print("Functions:\n");
+            System.out.print("1: Print Movies\n");
+            System.out.print("2: Book Ticket\n");
+            System.out.print("3: Change Seat\n");
+            System.out.print("4: Cancel Ticket\n");
+            System.out.print("5: Exit program\n");
+            System.out.print("Please select a function:\n");
+            option = scan.nextLine();
+            switch (option) {
+                case "1": //register account
+                    printMovies();
+                    break;
+                case "2": //log in
+                    bookTicket();
+                    break;
+                case "3": //log in
+                    bookTicket();
+                    break;
+                case "4": //log in
+                    cancelTicket();
+                    break;
+                case "5": //exit program
+                    System.out.print("Exiting...");
+                    return;
+                default: //if invalid option selected
+                    System.out.print("Invalid Input! Select a function (1-5)");
+            }
+        }
     }
 }

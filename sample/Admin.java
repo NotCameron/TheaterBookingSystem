@@ -123,6 +123,7 @@ public class Admin {
             preparedStmt.setTimestamp(1, time);
             preparedStmt.setInt(2, MID);
             preparedStmt.execute();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -146,8 +147,25 @@ public class Admin {
         //loop through entries in the Transaction table til the TID matches one (or if none match, exit the method)
         try  {
             Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            String query = "delete from transaction where ticket_id = ?";
+            //Find Seat
+            String query = "select * from transaction where ticket_id = ?";
             PreparedStatement preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, TID);
+            ResultSet rs = preparedStmt.executeQuery();
+            rs.next();
+            int MID = rs.getInt("movie_id");
+            int SID = rs.getInt("seat");
+
+            //Unoccupy
+            query = "update seat set occupied = 0 where seat_id = ? and movie_id = ?";
+            preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, SID);
+            preparedStmt.setInt(2, MID);
+            preparedStmt.execute();
+
+            //delete transaction
+            query = "delete from transaction where ticket_id = ?";
+            preparedStmt = conn.prepareStatement(query);
             preparedStmt.setInt(1, TID);
             preparedStmt.execute();
         } catch (SQLException e) {
