@@ -2,8 +2,9 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class Customer {
-    private static String userID, password, address;
+    private static String userID, password, address, email;
     private static Integer phoneNum, accountNum;
+    private static boolean loggedin = false;
 
     //Connection information (ideally wouldn't use a root account but this is a simple prototype)
     static final String DB_URL = "jdbc:mysql://localhost:3306/booking";
@@ -11,19 +12,53 @@ public class Customer {
     static final String PASS = "Rx5QiQrssvPw9N";
 
     //Account creation methods
-    public void register() {
+    public static void register() {
+        Scanner scan = new Scanner(System.in);
+        userID = scan.nextLine();
+        password = scan.nextLine();
+        email = scan.nextLine();
+        String phoneNumStr = scan.nextLine();
+        phoneNum = Integer.parseInt(phoneNumStr);
+        address = scan.nextLine();
 
+        //Insert into Database
+        try {
+            Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+
+            //generate customer_id
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT max(customer_id) as customer_id FROM customer");
+            rs.next();
+            int custID = rs.getInt("customer_id");
+            custID++;
+
+            //insert customer
+            String query = "insert into customer (customer_id, name, password, email, address, phone_number) values (?, ?, ?, ?, ?, ?)";
+            PreparedStatement preparedStmt = conn.prepareStatement(query);
+            preparedStmt.setInt(1, custID);
+            preparedStmt.setString(2, userID);
+            preparedStmt.setString(3, password);
+            preparedStmt.setString(4, email);
+            preparedStmt.setString(5, address);
+            preparedStmt.setInt(1, phoneNum);
+            preparedStmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public boolean login() {
-        //Loop throught the Admin table and check to see if a the adminID matches any entries.
+    public static boolean login() {
+        Scanner scan = new Scanner(System.in);
+        userID = scan.nextLine();
+        password = scan.nextLine();
+        //Loop throught the User table and check to see if a the adminID matches any entries.
         //If it does, check the password with that specfic one. If both match, validate the user.
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM admin")) {
+             ResultSet rs = stmt.executeQuery("SELECT * FROM customer")) {
             while(rs.next()) {
-                if(this.userID == rs.getString("customer_id")) {
-                    if(this.password.equals(rs.getString("password"))) {
+                if(userID == rs.getString("customer_id")) {
+                    if(password.equals(rs.getString("password"))) {
                         return true;
                     }
                 }
@@ -151,16 +186,44 @@ public class Customer {
 
     }
 
-
+    //Worry about later
     public void changeSeat() {
 
     }
 
+    //Maybe later
     public void cancelTicket() {
 
     }
 
     public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+        String option;
+        while (!loggedin) {
+            System.out.print("Log In Screen:\n");
+            System.out.print("1: Register Account\n");
+            System.out.print("2: Log In\n");
+            System.out.print("3: Exit program\n");
+            System.out.print("Please select a function:\n");
+            option = scan.nextLine();
+            switch (option) {
+                case "1": //register account
+                    register();
+                    break;
+                case "2": //log in
+                    System.out.print("Username: ");
+                    userID = scan.nextLine();
+                    System.out.print("Password: ");
+                    password = scan.nextLine();
+                    loggedin = login();
+                    break;
+                case "3": //exit program
+                    System.out.print("Exiting...");
+                    return;
+                default: //if invalid option selected
+                    System.out.print("Invalid Input! Select a function (1-5)");
+            }
+        }
         printMovies();
         accountNum = 1;
         bookTicket();
